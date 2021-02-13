@@ -4,9 +4,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#ifndef __WATCOMC__
+#define __far
+#endif
 
 int w, h;
-uint32_t* canvas = NULL;
+uint8_t __far* canvas = NULL;
 
 int backface = 1;
 short scale = 5, scale2 = 10;
@@ -22,7 +27,7 @@ short scale = 5, scale2 = 10;
  *  WY = SY - SX / 2
  */
 
-static uint32_t get_pixel(int x, int y) {
+static uint8_t get_pixel(int x, int y) {
 	if (x >= 0 && y >= 0 && x < w && y < h)
 		return canvas[y * w + x];
 	else
@@ -31,7 +36,7 @@ static uint32_t get_pixel(int x, int y) {
 
 static void put_pixel(int x, int y) {
 	if (x >= 0 && y >= 0 && x < w && y < h)
-		canvas[y * w + x] = 0xffffffff;
+		canvas[y * w + x] = 0xff;
 }
 
 void lineseghor(int x, int y, int dx, int dy, int len) {
@@ -139,7 +144,14 @@ int exec_canvas() {
 	free(canvas);
 	w = parm[1].val.s;
 	h = parm[2].val.s;
-	canvas = malloc(w * h * 4);
+	canvas = malloc(w * h);
+
+	if (!canvas) {
+		perror("malloc");
+		abort();
+	}
+
+	memset(canvas, 0, w * h);
 	return 0;
 }
 
@@ -159,7 +171,7 @@ int exec_writepgm() {
 	fprintf(out, "255\n");
 	for (y = 0; y < h; y++) {
 		for (x = 0; x < w; x++)
-			fprintf(out, "%3d ", get_pixel(x, y) & 0xff);
+			fprintf(out, "%3d ", get_pixel(x, y));
 		fprintf(out, "\n");
 	}
 	fclose(out);
